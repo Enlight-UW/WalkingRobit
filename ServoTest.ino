@@ -12,7 +12,7 @@
 void moveMotor(int motoNumber, int pos){//pos is in degrees and will move TO the value given
 
   servoArray[motoNumber].write(pos); 
- 
+ //test
 }
 
 
