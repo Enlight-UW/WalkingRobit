@@ -42,6 +42,7 @@ void setup() {
 void loop() {  
   moveMotor(moveInstructions[i],moveInstructions[i+1]);
   i += 2;
+  delay(500);
   if(moveInstructions[i]==END)
     i=0; 
 }
