@@ -5,20 +5,17 @@
 #define minROM 10 //Minimum Range of Motion
 #define maxROM 170 //Maximum Range of Motion
 #define END -1
+#define nPositions 5
 int pinArray[numberOfServos] = {2,3, 4,5, 6,7, 8,9}; //Add more pins as needed
-Servo servoArray[numberOfServos];//Init all servo motors
-int Positions[] = {10, 50, 90, 130, 170};
+Servo servoArray[numberOfServos];//all servo motors, initialized in setup
+int Positions[] = {10, 50, 90, 130, 170}; //Degrees of motion that legs/knees can mvoe to
 
-int moveInstructions[] = {0,0, 1,0, 0,4, //knee1 up, leg1 forward, knee1 down 
-                          6,0, 7,0, 6,4, //knee3 up, leg3 forward, knee3 down
-                          0,0, 1,4, 0,4, //knee1 up, leg1 back, knee1 down
-                          6,0, 7,4, 6,4, //knee3 up, leg3 back, knee3 down
-                          END,END};
+int motorInstructions[] = {1, 1, END}; //Which motor to move
+int moveInstructions[]  = {0, 4, END}; //Where to move it
 int i = 0;
 
 void moveMotor(int motoNumber, int pos){//pos is in degrees and will move TO the value given
   servoArray[motoNumber].write(Positions[pos]); 
- //test
 }
 
 void moveKnee(int knee, int pos){
@@ -40,9 +37,8 @@ void setup() {
 
 
 void loop() {  
-  moveMotor(moveInstructions[i],moveInstructions[i+1]);
-  i += 2;
+  //Test: Loop through all the positions on a specific motor
+  moveMotor(0,i); 
+  i = (i+1)%nPositions;
   delay(500);
-  if(moveInstructions[i]==END)
-    i=0; 
 }
