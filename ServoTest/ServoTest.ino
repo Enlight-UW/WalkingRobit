@@ -40,6 +40,20 @@ void step(int legNumber){
     moveKnee(legNumber,0);
 }
 
+//Step function to be called by walk function
+void walkStep(int legNumber, int position) {
+  moveLeg(legNumber, position);
+  moveKnee(legNumber, position);
+}
+
+//Takes a full step with all four legs
+void walk() {
+  step(0);
+  step(2);
+  step(1);
+  step(3);
+}
+
 void setup() {
   
   for(int x = 0; x < numberOfServos; x++){//Assign each servo to a pin, array[0] = pinarray[0]
@@ -51,5 +65,6 @@ void setup() {
 
 void loop() {  
   //Test: Loop through all the positions on a specific motor
-  step(0);
+  //step(0);
+  walk();
 }
