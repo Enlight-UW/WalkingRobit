@@ -1,0 +1,24 @@
+HOLY FUK THERE IS A LOT TO WRITE
+
+Controller Stuff
+	See the most recent controller image in this directory
+
+	Possible buttons:
+		BLUE  : https://www.adafruit.com/product/1477
+		RED   : https://www.adafruit.com/product/1439
+		WHITE : https://www.adafruit.com/product/1479
+		GREEN : https://www.adafruit.com/product/1440
+		
+		Why I like these:
+			-They are momentary buttons, they do not stay down after pressure has been applied
+			-They include their own housing meaning it will be much easier to mount them in the controller and swap them out if they break
+			-They are relatively cheap per unit
+		
+		TOTAL COST W/ SHIPPING: $16.80 for 8 buttons
+			
+			
+			
+			
+			
+OTHER IDEAS
+	Have the Enlight logo on the controller much like a nintendo or xbox one
