@@ -16,7 +16,7 @@
 #define RFORWARD 25
 
 //byte typed by keyboard
-byte byteRead;
+int byteRead;
 char keyRead;
 
 int pinArray[numberOfServos] = {2 ,3, 4, 5, 6, 7, 8, 9}; //GPIO Pins used
@@ -40,19 +40,24 @@ int currLegPos[4] = {0,0,0,0};
 //isLeg - 0 if leg is being moved, else 1
 //Changes position of chosen leg or knee then moves the appropriate part
 void moveRobot(int pos, int isLeg) {
+  Serial.println("In moveRobot");
   if(pos < 0 || pos > 3) {
     Serial.println("Error: moveRobot incorrect usage of pos");
   }
   if(isLeg == 0) {
      currLegPos[pos]++;
-     if(currLegPos[pos] >= sizeof(legPositions[pos])) {
+     if(currLegPos[pos] >= nPositions) {
       currLegPos[pos] = 0;
      }
+     Serial.print("Attempting to move leg ");
+     Serial.print(pos);
+     Serial.print(" to position ");
+     Serial.println(currLegPos[pos]);
      moveLeg(pos, currLegPos[pos]);
   }
   else if(isLeg == 1) {
     currKneePos[pos]++;
-     if(currKneePos[pos] >= sizeof(kneePositions[pos])) {
+     if(currKneePos[pos] >= nPositions) {
       currKneePos[pos] = 0;
      }
      moveKnee(pos, currKneePos[pos]);
@@ -104,16 +109,19 @@ void walk() {
 
 void setup() {
   
+  // turn on serial protocol
+  Serial.begin(9600);
+  
+  Serial.println("Setup started");
+  
   for(int x = 0; x < numberOfServos; x++){//Assign each servo to a pin, array[0] = pinarray[0]
     servoArray[x].attach(pinArray[x]);
   }
 
   getShitSetUp();
 
-  // turn on serial protocol
-  Serial.begin(9600);
-
   delay(3000);
+  Serial.println("Setup finished");
 }
 
 void getShitSetUp(){ //comments are for communists
@@ -127,42 +135,49 @@ void getShitSetUp(){ //comments are for communists
 
 //wait for keyboard input and respond
 void loop() {  
+}
 
+void serialEvent() {
+  Serial.println("Serial event occured!");
   //check for key input
-  if (Serial.available()) {
+  while(Serial.available() > 0) {
     
     //read most recent byte
     byteRead = Serial.read();
     keyRead = byteRead;
+    //Serial.print("Key pressed: ");
+    //Serial.println(keyRead);
     
-    if(keyRead == 'A'){
+    if(keyRead == 'a'){
       moveRobot(0, 1);
     }
-    else if(keyRead == 'S') {
+    else if(keyRead == 's') {
       moveRobot(1, 1);
     }
-    else if(keyRead == 'D') {
+    else if(keyRead == 'd') {
       moveRobot(2, 1);
     }
-    else if(keyRead == 'F') {
+    else if(keyRead == 'f') {
       moveRobot(3, 1);
     }
-    else if(keyRead == 'H') {
+    else if(keyRead == 'h') {
       moveRobot(0, 0);
     }
-    else if(keyRead == 'J') {
+    else if(keyRead == 'j') {
       moveRobot(1, 0);
     }
-    else if(keyRead == 'K') {
+    else if(keyRead == 'k') {
       moveRobot(2, 0);
     }
-    else if(keyRead == 'L') {
+    else if(keyRead == 'l') {
       moveRobot(3, 0);
     }
     else{
       //Unsupported key
-      Serial.println("Bad key press: " + keyRead);
+      Serial.print("Unsupported key: ");
+      Serial.println(keyRead);
     }
+    delay(100);
   }
 }
 
