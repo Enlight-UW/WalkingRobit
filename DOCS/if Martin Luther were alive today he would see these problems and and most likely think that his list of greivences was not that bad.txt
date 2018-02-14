@@ -15,6 +15,11 @@ Controller Stuff
 			-They are relatively cheap per unit
 		
 		TOTAL COST W/ SHIPPING: $16.80 for 8 buttons
+		
+		
+	BETTER BUTTONS : 
+	https://www.adafruit.com/product/1010
+	work directly on a breadboard and are like 1/3 of the price of the other ones
 			
 			
 			
