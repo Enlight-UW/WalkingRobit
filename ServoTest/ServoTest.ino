@@ -1,5 +1,7 @@
 #include <Servo.h>
 
+//TODO: Encode characters so each bit in the byte matches a servo. Allow for simultaneous movement of servos.
+
 #define numberOfServos 8 //Does not go higher than 8
 
 #define minROM 10 //Minimum Range of Motion
@@ -14,6 +16,8 @@
 #define RBACK 170
 #define FORWARD 170
 #define RFORWARD 25
+#define DIR_UP 1
+#define DIR_DOWN 0
 
 //byte typed by keyboard
 int byteRead;
@@ -26,14 +30,18 @@ Servo servoArray[numberOfServos];//all servo motors in one array, initialized in
 int legPositions[][4] = {{FORWARD, 120, 80, BACK}, {120, RBACK, RFORWARD, 80}, {BACK, FORWARD, 120, 80}, {80, 120, RBACK, RFORWARD}};
                                          //Make this a 2D array, 2 and maybe 3 are reverse of 0 and 1
 //int kneePositions[][4] = {{UP, DOWN, UP, UP}, {180, 0, 180, 180}, {UP, DOWN, UP, UP}, {180, 0, 180, 180}};
-int kneePositions[][4] = {{UP, DOWN, DOWN, DOWN}, {RDOWN, RDOWN, RUP, RDOWN}, {DOWN, UP, DOWN, DOWN}, {RDOWN, RDOWN, RDOWN, RUP}};
+int kneePositions[][2] = {{DOWN, UP}, {RDOWN, RUP}, {DOWN, UP}, {RDOWN, RUP}};
 
 int motorInstructions[] = {1, 1, END}; //Which motor to move
 int moveInstructions[]  = {0, 4, END}; //Where to move it
 int i = 0;
 
+//each character a byte, assign a bit to each motor
+//decode so multiple motors can move simultaneously
+
 //current position within sequence
-int currKneePos[4] = {0,0,0,0};
+int currKneePos[4] = {DOWN,RDOWN,DOWN,RDOWN};
+int currKneeDir[4] = {DIR_UP, DIR_UP, DIR_UP, DIR_UP};
 int currLegPos[4] = {0,0,0,0};
 
 //pos - position of leg or knee
@@ -56,11 +64,11 @@ void moveRobot(int pos, int isLeg) {
      moveLeg(pos, currLegPos[pos]);
   }
   else if(isLeg == 1) {
-    currKneePos[pos]++;
-     if(currKneePos[pos] >= nPositions) {
-      currKneePos[pos] = 0;
-     }
-     moveKnee(pos, currKneePos[pos]);
+     Serial.print("Attempting to move knee ");
+     Serial.print(pos);
+     Serial.print(" to position ");
+     Serial.println(currKneePos[pos]);
+     moveKnee(pos);
   }
   else {
     Serial.println("Error: moveRobot incorrect usage of isLeg");
@@ -71,15 +79,47 @@ void moveMotor(int motoNumber, int pos){//pos is in degrees and will move TO the
   servoArray[motoNumber].write(pos); 
 }
 
-void moveKnee(int knee, int posIdx){
-   moveMotor(knee*2,kneePositions[knee][posIdx]); 
+void moveKnee(int knee){
+
+   //Move the knee to correct position
+   moveMotor(knee*2, currKneePos[knee]);
+
+   //Determine next knee position
+   if(knee % 2 == 0) {
+    if(currKneeDir[knee] == DIR_UP) {
+      currKneePos[knee] = currKneePos[knee] - 10;
+      if(currKneePos[knee] <= UP) {
+        currKneeDir[knee] = DIR_DOWN;
+      }
+    }
+    else {
+      currKneePos[knee] = currKneePos[knee] + 10;
+      if(currKneePos[knee] >= DOWN) {
+        currKneeDir[knee] = DIR_UP;
+      }
+    }
+   }
+   else {
+    if(currKneeDir[knee] == DIR_UP) {
+      currKneePos[knee] = currKneePos[knee] - 20;
+      if(currKneePos[knee] <= RUP) {
+        currKneeDir[knee] = DIR_DOWN;
+      }
+    }
+    else {
+      currKneePos[knee] = currKneePos[knee] + 20;
+      if(currKneePos[knee] >= RDOWN) {
+        currKneeDir[knee] = DIR_UP;
+      }
+    }
+   }
 }
 
 void moveLeg(int leg, int posIdx){
-   moveMotor(leg*2+1,legPositions[leg][posIdx]); 
+   //moveMotor(leg*2+1,legPositions[leg][posIdx]); 
 }
 
-void step(int legNumber){
+/*void step(int legNumber){
     //walk the leg and knee through the full range of motion
     int j;
     for(j=0;j<nPositions;j++){
@@ -89,23 +129,7 @@ void step(int legNumber){
     } 
     moveLeg(legNumber,0);
     moveKnee(legNumber,0);
-}
-
-//Takes a full step with all four legs
-void walk() {
-  /*step(0);
-  step(1);
-  step(2);
-  step(3);*/
-  for(int pos=0;pos<nPositions;pos++){
-    for(int legNumber = 0; legNumber < 4; legNumber++) {
-      moveLeg(legNumber,pos);
-      moveKnee(legNumber,pos);
-    }   
-      delay(100);
-  }
-  
-}
+}*/
 
 void setup() {
   
@@ -118,22 +142,22 @@ void setup() {
     servoArray[x].attach(pinArray[x]);
   }
 
-  getShitSetUp();
+  setupRobot();
 
   delay(3000);
   Serial.println("Setup finished");
 }
 
-void getShitSetUp(){ //comments are for communists
+//resets robot to default standing position
+void setupRobot(){ 
 
   for(int i=0; i<=3; i++){
     moveLeg(i, 0);
-    moveKnee(i, 0);
+    moveKnee(i);
     delay(100);
   }
 }
 
-//wait for keyboard input and respond
 void loop() {  
 }
 
