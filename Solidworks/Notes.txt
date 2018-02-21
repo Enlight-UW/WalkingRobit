@@ -1,0 +1,6 @@
+Arduino Uno Dimensions
+
+2.7 in × 2.1 in [ 68.6 mm × 53.3 mm ]
+
+Make a keyboard style setup on the controller
+bring a fucking tape measure or ruler
