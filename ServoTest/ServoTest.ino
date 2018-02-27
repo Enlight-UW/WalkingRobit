@@ -22,8 +22,7 @@
 #define DIR_DOWN 0
 
 //byte typed by keyboard
-int byteRead;
-char keyRead;
+byte byteRead;
 
 int pinArray[numberOfServos] = {2 ,3, 4, 5, 6, 7, 8, 9}; //GPIO Pins used
 Servo servoArray[numberOfServos];//all servo motors in one array, initialized in setup
@@ -116,18 +115,6 @@ void moveLeg(int leg){
    }
 }
 
-/*void step(int legNumber){
-    //walk the leg and knee through the full range of motion
-    int j;
-    for(j=0;j<nPositions;j++){
-        moveLeg(legNumber,j);
-        moveKnee(legNumber,j); 
-        delay(1000);
-    } 
-    moveLeg(legNumber,0);
-    moveKnee(legNumber,0);
-}*/
-
 void setup() {
   
   // turn on serial protocol
@@ -166,39 +153,38 @@ void serialEvent() {
     
     //read most recent byte
     byteRead = Serial.read();
-    keyRead = byteRead;
-    //Serial.print("Key pressed: ");
-    //Serial.println(keyRead);
+    //Serial.print("Byte received: ");
+    //Serial.println(byteRead);
     
-    if(keyRead == 'a'){
+    if(bitRead(byteRead, 0)){
       moveRobot(0, 1);
     }
-    else if(keyRead == 's') {
-      moveRobot(1, 1);
-    }
-    else if(keyRead == 'd') {
-      moveRobot(2, 1);
-    }
-    else if(keyRead == 'f') {
-      moveRobot(3, 1);
-    }
-    else if(keyRead == 'h') {
+    if(bitRead(byteRead, 1)) {
       moveRobot(0, 0);
     }
-    else if(keyRead == 'j') {
+    if(bitRead(byteRead, 2)) {
+      moveRobot(1, 1);
+    }
+    if(bitRead(byteRead, 3)) {
       moveRobot(1, 0);
     }
-    else if(keyRead == 'k') {
+    if(bitRead(byteRead, 4)) {
+      moveRobot(2, 1);
+    }
+    if(bitRead(byteRead, 5)) {
       moveRobot(2, 0);
     }
-    else if(keyRead == 'l') {
+    if(bitRead(byteRead, 6)) {
+      moveRobot(3, 1);
+    }
+    if(bitRead(byteRead, 7)) {
       moveRobot(3, 0);
     }
-    else{
+    /*else{
       //Unsupported key
       Serial.print("Unsupported key: ");
       Serial.println(keyRead);
-    }
+    }*/
     delay(100);
   }
 }
