@@ -16,6 +16,8 @@
 #define RBACK 170
 #define FORWARD 170
 #define RFORWARD 25
+
+//direction of knee and leg value, not physical robot
 #define DIR_UP 1
 #define DIR_DOWN 0
 
@@ -26,11 +28,9 @@ char keyRead;
 int pinArray[numberOfServos] = {2 ,3, 4, 5, 6, 7, 8, 9}; //GPIO Pins used
 Servo servoArray[numberOfServos];//all servo motors in one array, initialized in setup
 
-//int legPositions[] = {25, 170, 170, 25}; //Degrees of motion that legs/knees can mvoe to
-int legPositions[][4] = {{FORWARD, 120, 80, BACK}, {120, RBACK, RFORWARD, 80}, {BACK, FORWARD, 120, 80}, {80, 120, RBACK, RFORWARD}};
-                                         //Make this a 2D array, 2 and maybe 3 are reverse of 0 and 1
-//int kneePositions[][4] = {{UP, DOWN, UP, UP}, {180, 0, 180, 180}, {UP, DOWN, UP, UP}, {180, 0, 180, 180}};
-int kneePositions[][2] = {{DOWN, UP}, {RDOWN, RUP}, {DOWN, UP}, {RDOWN, RUP}};
+//positions as limits [0] - [1] -> low - high
+int legBounds[][2] = {{25, 170}, {25, 170}, {25, 170}, {25, 170}};
+int kneeBounds[][2] = {{UP, DOWN}, {RUP, RDOWN}, {UP, DOWN}, {RUP, RDOWN}};
 
 int motorInstructions[] = {1, 1, END}; //Which motor to move
 int moveInstructions[]  = {0, 4, END}; //Where to move it
@@ -42,7 +42,8 @@ int i = 0;
 //current position within sequence
 int currKneePos[4] = {DOWN,RDOWN,DOWN,RDOWN};
 int currKneeDir[4] = {DIR_UP, DIR_UP, DIR_UP, DIR_UP};
-int currLegPos[4] = {0,0,0,0};
+int currLegPos[4] = {BACK, RBACK, BACK, RBACK};
+int currLegDir[4] = {DIR_UP, DIR_UP, DIR_UP, DIR_UP};
 
 //pos - position of leg or knee
 //isLeg - 0 if leg is being moved, else 1
@@ -53,15 +54,11 @@ void moveRobot(int pos, int isLeg) {
     Serial.println("Error: moveRobot incorrect usage of pos");
   }
   if(isLeg == 0) {
-     currLegPos[pos]++;
-     if(currLegPos[pos] >= nPositions) {
-      currLegPos[pos] = 0;
-     }
      Serial.print("Attempting to move leg ");
      Serial.print(pos);
      Serial.print(" to position ");
      Serial.println(currLegPos[pos]);
-     moveLeg(pos, currLegPos[pos]);
+     moveLeg(pos);
   }
   else if(isLeg == 1) {
      Serial.print("Attempting to move knee ");
@@ -85,38 +82,38 @@ void moveKnee(int knee){
    moveMotor(knee*2, currKneePos[knee]);
 
    //Determine next knee position
-   if(knee % 2 == 0) {
-    if(currKneeDir[knee] == DIR_UP) {
-      currKneePos[knee] = currKneePos[knee] - 10;
-      if(currKneePos[knee] <= UP) {
-        currKneeDir[knee] = DIR_DOWN;
-      }
-    }
-    else {
-      currKneePos[knee] = currKneePos[knee] + 10;
-      if(currKneePos[knee] >= DOWN) {
-        currKneeDir[knee] = DIR_UP;
-      }
-    }
+   if(currKneeDir[knee] == DIR_UP) {
+     currKneePos[knee] += 10;
+     if(currKneePos[knee] >= kneeBounds[knee][1]) {
+      currKneeDir[knee] = DIR_DOWN;
+     }
    }
    else {
-    if(currKneeDir[knee] == DIR_UP) {
-      currKneePos[knee] = currKneePos[knee] - 20;
-      if(currKneePos[knee] <= RUP) {
-        currKneeDir[knee] = DIR_DOWN;
-      }
-    }
-    else {
-      currKneePos[knee] = currKneePos[knee] + 20;
-      if(currKneePos[knee] >= RDOWN) {
-        currKneeDir[knee] = DIR_UP;
-      }
-    }
+     currKneePos[knee] -= 10;
+     if(currKneePos[knee] <= kneeBounds[knee][0]) {
+      currKneeDir[knee] = DIR_UP;
+     }
    }
 }
 
-void moveLeg(int leg, int posIdx){
-   //moveMotor(leg*2+1,legPositions[leg][posIdx]); 
+void moveLeg(int leg){
+
+  //move leg to correct position
+  moveMotor(leg*2+1,currLegPos[leg]);
+
+  //Determine next leg position
+  if(currLegDir[leg] == DIR_UP) {
+     currLegPos[leg] += 10;
+     if(currLegPos[leg] >= legBounds[leg][1]) {
+      currLegDir[leg] = DIR_DOWN;
+     }
+   }
+   else {
+     currLegPos[leg] -= 10;
+     if(currLegPos[leg] <= legBounds[leg][0]) {
+      currLegDir[leg] = DIR_UP;
+     }
+   }
 }
 
 /*void step(int legNumber){
@@ -137,8 +134,9 @@ void setup() {
   Serial.begin(9600);
   
   Serial.println("Setup started");
-  
-  for(int x = 0; x < numberOfServos; x++){//Assign each servo to a pin, array[0] = pinarray[0]
+
+  //Assign each servo to a pin, array[0] = pinarray[0]
+  for(int x = 0; x < numberOfServos; x++){
     servoArray[x].attach(pinArray[x]);
   }
 
@@ -152,7 +150,7 @@ void setup() {
 void setupRobot(){ 
 
   for(int i=0; i<=3; i++){
-    moveLeg(i, 0);
+    moveLeg(i);
     moveKnee(i);
     delay(100);
   }
