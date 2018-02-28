@@ -1,6 +1,7 @@
 #include <Servo.h>
 
-//TODO: Encode characters so each bit in the byte matches a servo. Allow for simultaneous movement of servos.
+//TODO: Tie opposite legs and knees together
+//TODO: Change buttons to forward and backward for each knee and leg pair 
 
 #define numberOfServos 8 //Does not go higher than 8
 
@@ -146,6 +147,7 @@ void setupRobot(){
 void loop() {  
 }
 
+//Receive incoming commands and move appropriate motors
 void serialEvent() {
   Serial.println("Serial event occured!");
   //check for key input
@@ -153,8 +155,28 @@ void serialEvent() {
     
     //read most recent byte
     byteRead = Serial.read();
-    //Serial.print("Byte received: ");
-    //Serial.println(byteRead);
+    Serial.print("Byte received: ");
+    Serial.println(byteRead);
+
+    //TEMPORARY DEBUG
+    char keyRead = byteRead;
+
+    //knees
+    if(keyRead == 'a') {
+      byteRead = 0x11;
+    }
+    if(keyRead == 's') {
+      byteRead == 0x42;
+    }
+    //legs
+    if(keyRead == 'h') {
+      byteRead = 0x22;
+    }
+    if(keyRead == 'j') {
+      byteRead = 0x88;
+    }
+
+    //TEMPORARY DEBUG END
     
     if(bitRead(byteRead, 0)){
       moveRobot(0, 1);
