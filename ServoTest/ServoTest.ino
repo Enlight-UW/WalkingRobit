@@ -48,7 +48,7 @@ int currLegDir[4] = {DIR_UP, DIR_UP, DIR_UP, DIR_UP};
 //pos - position of leg or knee
 //isLeg - 0 if leg is being moved, else 1
 //Changes position of chosen leg or knee then moves the appropriate part
-void moveRobot(int pos, int isLeg) {
+void moveRobot(int pos, int isLeg, int dir) {
   Serial.println("In moveRobot");
   if(pos < 0 || pos > 3) {
     Serial.println("Error: moveRobot incorrect usage of pos");
@@ -58,14 +58,16 @@ void moveRobot(int pos, int isLeg) {
      Serial.print(pos);
      Serial.print(" to position ");
      Serial.println(currLegPos[pos]);
-     moveLeg(pos);
+     moveLeg(pos, dir);
+     moveLeg(pos+2, dir);
   }
   else if(isLeg == 1) {
      Serial.print("Attempting to move knee ");
      Serial.print(pos);
      Serial.print(" to position ");
      Serial.println(currKneePos[pos]);
-     moveKnee(pos);
+     moveKnee(pos, dir);
+     moveKnee(pos+2, dir);
   }
   else {
     Serial.println("Error: moveRobot incorrect usage of isLeg");
@@ -76,44 +78,44 @@ void moveMotor(int motoNumber, int pos){//pos is in degrees and will move TO the
   servoArray[motoNumber].write(pos); 
 }
 
-void moveKnee(int knee){
-
-   //Move the knee to correct position
-   moveMotor(knee*2, currKneePos[knee]);
-
+void moveKnee(int knee, int dir) {
+  
    //Determine next knee position
-   if(currKneeDir[knee] == DIR_UP) {
+   if(dir == DIR_UP) {
      currKneePos[knee] += 10;
-     if(currKneePos[knee] >= kneeBounds[knee][1]) {
-      currKneeDir[knee] = DIR_DOWN;
+     if(currKneePos[knee] > kneeBounds[knee][1]) {
+      currKneePos[knee] = kneeBounds[knee][1];
      }
    }
    else {
      currKneePos[knee] -= 10;
-     if(currKneePos[knee] <= kneeBounds[knee][0]) {
-      currKneeDir[knee] = DIR_UP;
+     if(currKneePos[knee] < kneeBounds[knee][0]) {
+      currKneePos[knee] = kneeBounds[knee][0];
      }
    }
+
+   //Move the knee to correct position
+   moveMotor(knee*2, currKneePos[knee]);
 }
 
-void moveLeg(int leg){
-
-  //move leg to correct position
-  moveMotor(leg*2+1,currLegPos[leg]);
+void moveLeg(int leg, int dir) {
 
   //Determine next leg position
-  if(currLegDir[leg] == DIR_UP) {
+  if(dir == DIR_UP) {
      currLegPos[leg] += 10;
-     if(currLegPos[leg] >= legBounds[leg][1]) {
-      currLegDir[leg] = DIR_DOWN;
+     if(currLegPos[leg] > legBounds[leg][1]) {
+      currLegPos[leg] = legBounds[leg][1];
      }
    }
    else {
      currLegPos[leg] -= 10;
-     if(currLegPos[leg] <= legBounds[leg][0]) {
-      currLegDir[leg] = DIR_UP;
+     if(currLegPos[leg] < legBounds[leg][0]) {
+      currLegPos[leg] = legBounds[leg][0];
      }
    }
+
+  //move leg to correct position
+  moveMotor(leg*2+1,currLegPos[leg]);
 }
 
 void setup() {
@@ -135,11 +137,10 @@ void setup() {
 }
 
 //resets robot to default standing position
-void setupRobot(){ 
-
+void setupRobot() { 
   for(int i=0; i<=3; i++){
-    moveLeg(i);
-    moveKnee(i);
+    moveMotor(i*2, currKneePos[i]);
+    moveMotor(i*2 + 1, currLegPos[i]);
     delay(100);
   }
 }
@@ -161,46 +162,61 @@ void serialEvent() {
     //TEMPORARY DEBUG
     char keyRead = byteRead;
 
-    //knees
+    //knee pair 1
+    if(keyRead == 'q') {
+      byteRead = 0x04;
+    }
+    if(keyRead == 'w') {
+      byteRead == 0x08;
+    }
+    //knee pair 2
     if(keyRead == 'a') {
-      byteRead = 0x11;
+      byteRead = 0x40;
     }
     if(keyRead == 's') {
-      byteRead == 0x42;
+      byteRead == 0x80;
     }
-    //legs
-    if(keyRead == 'h') {
-      byteRead = 0x22;
+    //leg pair 1
+    if(keyRead == 'o') {
+      byteRead = 0x01;
     }
-    if(keyRead == 'j') {
-      byteRead = 0x88;
+    if(keyRead == 'p') {
+      byteRead = 0x02;
+    }
+    //leg pair 2
+    if(keyRead == 'k') {
+      byteRead = 0x10;
+    }
+    if(keyRead == 'l') {
+      byteRead = 0x20;
     }
 
     //TEMPORARY DEBUG END
     
+    
     if(bitRead(byteRead, 0)){
-      moveRobot(0, 1);
+      moveRobot(0, 0, 0);
     }
     if(bitRead(byteRead, 1)) {
-      moveRobot(0, 0);
+      moveRobot(0, 0, 1);
     }
     if(bitRead(byteRead, 2)) {
-      moveRobot(1, 1);
+      moveRobot(0, 1, 0);
     }
     if(bitRead(byteRead, 3)) {
-      moveRobot(1, 0);
+      moveRobot(0, 1, 1);
     }
     if(bitRead(byteRead, 4)) {
-      moveRobot(2, 1);
+      moveRobot(1, 0, 0);
     }
     if(bitRead(byteRead, 5)) {
-      moveRobot(2, 0);
+      moveRobot(1, 0, 1);
     }
     if(bitRead(byteRead, 6)) {
-      moveRobot(3, 1);
+      moveRobot(1, 1, 0);
     }
     if(bitRead(byteRead, 7)) {
-      moveRobot(3, 0);
+      moveRobot(1, 1, 1);
     }
     /*else{
       //Unsupported key
