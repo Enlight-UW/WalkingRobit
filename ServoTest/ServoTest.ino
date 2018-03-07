@@ -178,17 +178,17 @@ void serialEvent() {
 
     //knee pair 1
     if(keyRead == 'q') {
-      byteRead = 0x04;
+      byteRead = 0x08;
     }
     if(keyRead == 'w') {
-      byteRead = 0x08;
+      byteRead = 0x04;
     }
     //knee pair 2
     if(keyRead == 'a') {
-      byteRead = 0x40;
+      byteRead = 0x80;
     }
     if(keyRead == 's') {
-      byteRead = 0x80;
+      byteRead = 0x40;
     }
     //leg pair 1
     if(keyRead == 'o') {
