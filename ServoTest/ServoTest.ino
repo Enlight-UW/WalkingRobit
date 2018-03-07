@@ -40,9 +40,9 @@ int i = 0;
 //decode so multiple motors can move simultaneously
 
 //current position within sequence
-int currKneePos[4] = {DOWN,RDOWN,DOWN,RDOWN};
+int currKneePos[4] = {50, 90, 50, 90};
 int currKneeDir[4] = {DIR_UP, DIR_UP, DIR_UP, DIR_UP};
-int currLegPos[4] = {BACK, RBACK, BACK, RBACK};
+int currLegPos[4] = {100, 100, 100, 100};
 int currLegDir[4] = {DIR_UP, DIR_UP, DIR_UP, DIR_UP};
 
 //pos - position of leg or knee
@@ -54,18 +54,28 @@ void moveRobot(int pos, int isLeg, int dir) {
     Serial.println("Error: moveRobot incorrect usage of pos");
   }
   if(isLeg == 0) {
-     Serial.print("Attempting to move leg ");
+     Serial.print("Attempting to move leg pair ");
      Serial.print(pos);
      Serial.print(" to position ");
      Serial.println(currLegPos[pos]);
      moveLeg(pos, dir);
-     moveLeg(pos+2, dir);
+     if(dir == DIR_DOWN) {
+      moveLeg(pos+2, DIR_UP);
+     }
+     else {
+      moveLeg(pos+2, DIR_DOWN);
+     }
+     
   }
   else if(isLeg == 1) {
      Serial.print("Attempting to move knee ");
      Serial.print(pos);
      Serial.print(" to position ");
      Serial.println(currKneePos[pos]);
+     Serial.print("Attempting to move knee ");
+     Serial.print(pos+2);
+     Serial.print(" to position ");
+     Serial.println(currKneePos[pos+2]);
      moveKnee(pos, dir);
      moveKnee(pos+2, dir);
   }
@@ -156,25 +166,29 @@ void serialEvent() {
     
     //read most recent byte
     byteRead = Serial.read();
-    Serial.print("Byte received: ");
-    Serial.println(byteRead);
+    //Serial.print("Byte received: ");
+    //Serial.println(byteRead);
+    
 
     //TEMPORARY DEBUG
     char keyRead = byteRead;
+
+    Serial.print("Key received: ");
+    Serial.println(keyRead);
 
     //knee pair 1
     if(keyRead == 'q') {
       byteRead = 0x04;
     }
     if(keyRead == 'w') {
-      byteRead == 0x08;
+      byteRead = 0x08;
     }
     //knee pair 2
     if(keyRead == 'a') {
       byteRead = 0x40;
     }
     if(keyRead == 's') {
-      byteRead == 0x80;
+      byteRead = 0x80;
     }
     //leg pair 1
     if(keyRead == 'o') {
@@ -192,6 +206,9 @@ void serialEvent() {
     }
 
     //TEMPORARY DEBUG END
+
+    Serial.print("Byte received: ");
+    Serial.println(byteRead);
     
     
     if(bitRead(byteRead, 0)){
