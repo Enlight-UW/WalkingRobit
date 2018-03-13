@@ -25,59 +25,61 @@
 //byte typed by keyboard
 byte byteRead;
 
-int pinArray[numberOfServos] = {2 ,3, 4, 5, 6, 7, 8, 9}; //GPIO Pins used
+int pinArray[numberOfServos] = {2, 3, 4, 5, 6, 7, 8, 9}; //GPIO Pins used
 Servo servoArray[numberOfServos];//all servo motors in one array, initialized in setup
 
 //positions as limits [0] - [1] -> low - high
-int legBounds[][2] = {{25, 170}, {25, 170}, {25, 170}, {25, 170}};
-int kneeBounds[][2] = {{UP, DOWN}, {RUP, RDOWN}, {UP, DOWN}, {RUP, RDOWN}};
+int legBounds[][2] = {{30, 160}, {30, 160}, {30, 160}, {20, 170}};
+int kneeBounds[][2] = {{40, 80}, {RUP, RDOWN}, {40, 80}, {RUP, RDOWN}};
 
 int motorInstructions[] = {1, 1, END}; //Which motor to move
 int moveInstructions[]  = {0, 4, END}; //Where to move it
 int i = 0;
 
-//each character a byte, assign a bit to each motor
-//decode so multiple motors can move simultaneously
-
 //current position within sequence
 int currKneePos[4] = {50, 90, 50, 90};
 int currKneeDir[4] = {DIR_UP, DIR_UP, DIR_UP, DIR_UP};
-int currLegPos[4] = {100, 100, 100, 100};
+int currLegPos[4] = {90, 90, 90, 70};
 int currLegDir[4] = {DIR_UP, DIR_UP, DIR_UP, DIR_UP};
 
 //pos - position of leg or knee
 //isLeg - 0 if leg is being moved, else 1
 //Changes position of chosen leg or knee then moves the appropriate part
-void moveRobot(int pos, int isLeg, int dir) {
+void moveRobot(int pairID, int isLeg, int dir) {
   Serial.println("In moveRobot");
-  if(pos < 0 || pos > 3) {
-    Serial.println("Error: moveRobot incorrect usage of pos");
+  if(pairID < 0 || pairID > 3) {
+    Serial.println("Error: moveRobot incorrect usage of pairID");
   }
   if(isLeg == 0) {
-     Serial.print("Attempting to move leg pair ");
-     Serial.print(pos);
+     Serial.print("Attempting to move leg ");
+     Serial.print(pairID);
      Serial.print(" to position ");
-     Serial.println(currLegPos[pos]);
-     moveLeg(pos, dir);
+     Serial.println(currLegPos[pairID]);
+     Serial.print("Attempting to move leg ");
+     Serial.print(pairID+2);
+     Serial.print(" to position ");
+     Serial.println(currLegPos[pairID+2]);
+     moveLeg(pairID, dir);
+     //moveLeg(pairID+2, dir);
      if(dir == DIR_DOWN) {
-      moveLeg(pos+2, DIR_UP);
+      moveLeg(pairID+2, DIR_UP);
      }
      else {
-      moveLeg(pos+2, DIR_DOWN);
+      moveLeg(pairID+2, DIR_DOWN);
      }
      
   }
   else if(isLeg == 1) {
      Serial.print("Attempting to move knee ");
-     Serial.print(pos);
+     Serial.print(pairID);
      Serial.print(" to position ");
-     Serial.println(currKneePos[pos]);
+     Serial.println(currKneePos[pairID]);
      Serial.print("Attempting to move knee ");
-     Serial.print(pos+2);
+     Serial.print(pairID+2);
      Serial.print(" to position ");
-     Serial.println(currKneePos[pos+2]);
-     moveKnee(pos, dir);
-     moveKnee(pos+2, dir);
+     Serial.println(currKneePos[pairID+2]);
+     moveKnee(pairID, dir);
+     moveKnee(pairID+2, dir);
   }
   else {
     Serial.println("Error: moveRobot incorrect usage of isLeg");
