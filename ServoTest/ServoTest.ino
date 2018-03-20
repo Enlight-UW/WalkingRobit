@@ -1,14 +1,8 @@
 #include <Servo.h>
 
-//TODO: Tie opposite legs and knees together
-//TODO: Change buttons to forward and backward for each knee and leg pair 
+//Servos on robot
+#define numberOfServos 8
 
-#define numberOfServos 8 //Does not go higher than 8
-
-#define minROM 10 //Minimum Range of Motion
-#define maxROM 170 //Maximum Range of Motion
-#define END -1
-#define nPositions 4
 #define DOWN 90
 #define RDOWN 180
 #define UP 10
@@ -22,7 +16,7 @@
 #define DIR_UP 1
 #define DIR_DOWN 0
 
-//byte typed by keyboard
+//byte sent over serial
 byte byteRead;
 
 int pinArray[numberOfServos] = {2, 3, 4, 5, 6, 7, 8, 9}; //GPIO Pins used
@@ -32,25 +26,35 @@ Servo servoArray[numberOfServos];//all servo motors in one array, initialized in
 int legBounds[][2] = {{30, 160}, {30, 160}, {30, 160}, {20, 170}};
 int kneeBounds[][2] = {{40, 80}, {RUP, RDOWN}, {40, 80}, {RUP, RDOWN}};
 
-int motorInstructions[] = {1, 1, END}; //Which motor to move
-int moveInstructions[]  = {0, 4, END}; //Where to move it
-int i = 0;
-
-//current position within sequence
+//current position in degrees
 int currKneePos[4] = {50, 90, 50, 90};
-int currKneeDir[4] = {DIR_UP, DIR_UP, DIR_UP, DIR_UP};
 int currLegPos[4] = {90, 90, 90, 70};
-int currLegDir[4] = {DIR_UP, DIR_UP, DIR_UP, DIR_UP};
 
 //pos - position of leg or knee
-//isLeg - 0 if leg is being moved, else 1
+//isLeg - 1 if leg is being moved, 0 for knee
 //Changes position of chosen leg or knee then moves the appropriate part
+/*
+ * Move a pair of legs or knees incrementally in a direction.
+ * @param pairID pair of legs or knees to move (0 or 1)
+ * @param isLeg 1 if leg is being moved, 0 for knee
+ * @param dir boolean direction to move leg or knee pair
+ * 
+ */
 void moveRobot(int pairID, int isLeg, int dir) {
   Serial.println("In moveRobot");
   if(pairID < 0 || pairID > 3) {
     Serial.println("Error: moveRobot incorrect usage of pairID");
   }
-  if(isLeg == 0) {
+  if(isLeg == 1) {
+     
+     moveLeg(pairID, dir);
+     if(dir == DIR_DOWN) {
+      moveLeg(pairID+2, DIR_UP);
+     }
+     else {
+      moveLeg(pairID+2, DIR_DOWN);
+     }
+
      Serial.print("Attempting to move leg ");
      Serial.print(pairID);
      Serial.print(" to position ");
@@ -59,17 +63,13 @@ void moveRobot(int pairID, int isLeg, int dir) {
      Serial.print(pairID+2);
      Serial.print(" to position ");
      Serial.println(currLegPos[pairID+2]);
-     moveLeg(pairID, dir);
-     //moveLeg(pairID+2, dir);
-     if(dir == DIR_DOWN) {
-      moveLeg(pairID+2, DIR_UP);
-     }
-     else {
-      moveLeg(pairID+2, DIR_DOWN);
-     }
      
   }
-  else if(isLeg == 1) {
+  else if(isLeg == 0) {
+     
+     moveKnee(pairID, dir);
+     moveKnee(pairID+2, dir);
+
      Serial.print("Attempting to move knee ");
      Serial.print(pairID);
      Serial.print(" to position ");
@@ -78,18 +78,28 @@ void moveRobot(int pairID, int isLeg, int dir) {
      Serial.print(pairID+2);
      Serial.print(" to position ");
      Serial.println(currKneePos[pairID+2]);
-     moveKnee(pairID, dir);
-     moveKnee(pairID+2, dir);
   }
   else {
     Serial.println("Error: moveRobot incorrect usage of isLeg");
   }
 }
 
-void moveMotor(int motoNumber, int pos){//pos is in degrees and will move TO the value given
+/* 
+ *  Write to a servo to move motor to exact position.
+ *  @param motoNumber number of motor being written to, corresponds to markings on robot
+ *  @param position to move the motor to in degrees
+ * 
+ */
+void moveMotor(int motoNumber, int pos){
   servoArray[motoNumber].write(pos); 
 }
 
+/* 
+ * Move a knee incrementally in a particular direction
+ * @param knee index of knee to move (0 - 3), motor = knee * 2 
+ * @param dir direction to move the knee
+ * 
+ */
 void moveKnee(int knee, int dir) {
   
    //Determine next knee position
@@ -110,6 +120,12 @@ void moveKnee(int knee, int dir) {
    moveMotor(knee*2, currKneePos[knee]);
 }
 
+/* 
+ * Move a leg incrementally in a particular direction
+ * @param leg index of leg to move (0 - 3), motor = (leg * 2) + 1 
+ * @param dir direction to move the knee
+ * 
+ */
 void moveLeg(int leg, int dir) {
 
   //Determine next leg position
@@ -130,6 +146,9 @@ void moveLeg(int leg, int dir) {
   moveMotor(leg*2+1,currLegPos[leg]);
 }
 
+/* 
+ * Initial setup of robot. Setup servo array and move robot to resting position.
+ */
 void setup() {
   
   // turn on serial protocol
@@ -148,7 +167,9 @@ void setup() {
   Serial.println("Setup finished");
 }
 
-//resets robot to default standing position
+/* 
+ * Resets robot to default standing position. Moves each motor.
+ */
 void setupRobot() { 
   for(int i=0; i<=3; i++){
     moveMotor(i*2, currKneePos[i]);
@@ -160,10 +181,12 @@ void setupRobot() {
 void loop() {  
 }
 
-//Receive incoming commands and move appropriate motors
+/* 
+ * Receive incoming commands and move appropriate motors.
+ */
 void serialEvent() {
   Serial.println("Serial event occured!");
-  //check for key input
+  //check for serial input
   while(Serial.available() > 0) {
     
     //read most recent byte
@@ -237,11 +260,6 @@ void serialEvent() {
     if(bitRead(byteRead, 7)) {
       moveRobot(1, 1, 1);
     }
-    /*else{
-      //Unsupported key
-      Serial.print("Unsupported key: ");
-      Serial.println(keyRead);
-    }*/
     delay(100);
   }
 }
