@@ -1,4 +1,5 @@
 #include <Servo.h>
+#include <SoftwareSerial.h>
 
 //Servos on robot
 #define numberOfServos 8
@@ -18,6 +19,9 @@
 
 //byte sent over serial
 byte byteRead;
+
+//RX | TX
+SoftwareSerial BTserial(13, 12);
 
 int pinArray[numberOfServos] = {2, 3, 4, 5, 6, 7, 8, 9}; //GPIO Pins used
 Servo servoArray[numberOfServos];//all servo motors in one array, initialized in setup
@@ -163,6 +167,9 @@ void setup() {
 
   setupRobot();
 
+  //setup wireless receiver
+  BTserial.begin(9600);
+
   delay(3000);
   Serial.println("Setup finished");
 }
@@ -187,10 +194,10 @@ void loop() {
 void serialEvent() {
   Serial.println("Serial event occured!");
   //check for serial input
-  while(Serial.available() > 0) {
+  while(BTserial.available() > 0) {
     
     //read most recent byte
-    byteRead = Serial.read();
+    byteRead = BTserial.read();
     //Serial.print("Byte received: ");
     //Serial.println(byteRead);
     
