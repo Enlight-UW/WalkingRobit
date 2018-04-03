@@ -20,6 +20,10 @@ void setup()
     Serial.println("Enter AT commands:");
  
     // HC-06 default serial speed is 9600
+    // Needs neither CTRL+R nor Newline
+    //BTserial.begin(9600);
+    //HC-05 default speed is 38400
+    //Needs both CTRL+R + Newline 
     BTserial.begin(9600);  
 }
  
