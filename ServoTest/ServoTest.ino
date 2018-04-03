@@ -186,15 +186,16 @@ void setupRobot() {
 }
 
 void loop() {  
+  BTserialEvent();
 }
 
 /* 
  * Receive incoming commands and move appropriate motors.
  */
-void serialEvent() {
+void BTserialEvent() {
   Serial.println("Serial event occured!");
   //check for serial input
-  while(BTserial.available() > 0) {
+  while(BTserial.available()) {
     
     //read most recent byte
     byteRead = BTserial.read();
