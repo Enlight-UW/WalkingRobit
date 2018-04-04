@@ -1,3 +1,4 @@
-I WILL BUILD A GIANT ROBOT AND USE IT TO TAKE OVER THE WORLD
-
-HAHAHAHAHAHA
+Only tested on Ubuntu
+Run these commands to set up python scripts:
+$ sudo apt-get install libbluetooth-dev
+$ pip install pybluez

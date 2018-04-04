@@ -17,7 +17,7 @@ SoftwareSerial BTserial(13, 12); // RX | TX
 void setup() 
 {
     Serial.begin(9600);
-    Serial.println("Enter AT commands:");
+    Serial.print("0");
  
     // HC-06 default serial speed is 9600
     // Needs neither CTRL+R nor Newline
@@ -25,21 +25,24 @@ void setup()
     //HC-05 default speed is 38400
     //Needs both CTRL+R + Newline 
     BTserial.begin(9600);  
-}
- 
+} 
 void loop()
 {
  
     // Keep reading from HC-06 and send to Arduino Serial Monitor
     if (BTserial.available())
     {  
-        Serial.write(BTserial.read());
+        byte in_byte = BTserial.read();
+        Serial.write(in_byte+1);
     }
  
     // Keep reading from Arduino Serial Monitor and send to HC-06
     if (Serial.available())
     {
-        BTserial.write(Serial.read());
+        byte in_byte = Serial.read();
+        Serial.println("BT sending = ");
+        Serial.println(in_byte);
+        BTserial.write(in_byte);
     }
  
 }
