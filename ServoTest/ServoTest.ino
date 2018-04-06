@@ -1,5 +1,6 @@
 #include <Servo.h>
 #include <SoftwareSerial.h>
+#include <EEPROM.h>
 
 //Servos on robot
 #define numberOfServos 8
@@ -7,7 +8,7 @@
 #define DOWN 90
 #define RDOWN 180
 #define UP 10
-#define RUP 0
+#define RUP 100
 #define BACK 25
 #define RBACK 170
 #define FORWARD 170
@@ -165,12 +166,18 @@ void setup() {
     servoArray[x].attach(pinArray[x]);
   }
 
+  //read current positions in from EEProm
+  for(int i = 0; i < 4; i++) {
+    currKneePos[i] = EEPROM.read(i);
+    currLegPos[i] = EEPROM.read(i+4);
+  }
+
   setupRobot();
 
   //setup wireless receiver
   BTserial.begin(9600);
 
-  delay(3000);
+  //delay(3000);
   Serial.println("Setup finished");
 }
 
@@ -181,29 +188,36 @@ void setupRobot() {
   for(int i=0; i<=3; i++){
     moveMotor(i*2, currKneePos[i]);
     moveMotor(i*2 + 1, currLegPos[i]);
-    delay(100);
+    delay(50);
   }
 }
 
-void loop() {  
+void loop() {
+   readInput();
 }
 
 /* 
  * Receive incoming commands and move appropriate motors.
  */
-void serialEvent() {
-  Serial.println("Serial event occured!");
+void readInput() {
+  //Serial.println("Serial event occured!");
   //check for serial input
-  while(BTserial.available() > 0) {
+  while(BTserial.available() > 0 || Serial.available() > 0) {
     
     //read most recent byte
-    byteRead = BTserial.read();
+    if(BTserial.available() > 0) {
+      byteRead = BTserial.read();
+    }
+    else {
+      byteRead = Serial.read();
+    }
+    
     //Serial.print("Byte received: ");
     //Serial.println(byteRead);
     
 
     //TEMPORARY DEBUG
-    char keyRead = byteRead;
+    /*char keyRead = byteRead;
 
     Serial.print("Key received: ");
     Serial.println(keyRead);
@@ -235,12 +249,12 @@ void serialEvent() {
     }
     if(keyRead == 'l') {
       byteRead = 0x20;
-    }
+    }*/
 
     //TEMPORARY DEBUG END
 
-    Serial.print("Byte received: ");
-    Serial.println(byteRead);
+    //Serial.print("Byte received: ");
+    //Serial.println(byteRead);
     
     
     if(bitRead(byteRead, 0)){
@@ -267,7 +281,15 @@ void serialEvent() {
     if(bitRead(byteRead, 7)) {
       moveRobot(1, 1, 1);
     }
+
+    //update EEPROM
+    for(int i = 0; i < 4; i++) {
+      EEPROM.write(i, currKneePos[i]);
+      EEPROM.write(i+4, currLegPos[i]);
+    }
+
     delay(100);
   }
+  delay(100);
 }
 
