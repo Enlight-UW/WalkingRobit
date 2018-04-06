@@ -1,55 +1,299 @@
 #include <Servo.h>
+#include <SoftwareSerial.h>
+#include <EEPROM.h>
 
-#define numberOfServos 8 //Does not go higher than 8
+//Servos on robot
+#define numberOfServos 8
 
-#define minROM 10 //Minimum Range of Motion
-#define maxROM 170 //Maximum Range of Motion
-#define END -1
-#define nPositions 4
-int pinArray[numberOfServos] = {2 ,3, 4,5, 6,7, 8, 9}; //Add more pins as needed
-Servo servoArray[numberOfServos];//all servo motors, initialized in setup
+#define DOWN 90
+#define RDOWN 180
+#define UP 10
+#define RUP 100
+#define BACK 25
+#define RBACK 170
+#define FORWARD 170
+#define RFORWARD 25
 
-int legPositions[] = {25, 170, 170, 25}; //Degrees of motion that legs/knees can mvoe to
-int kneePositions[] = {90, 10, 90, 90};
+//direction of knee and leg value, not physical robot
+#define DIR_UP 1
+#define DIR_DOWN 0
 
-int motorInstructions[] = {1, 1, END}; //Which motor to move
-int moveInstructions[]  = {0, 4, END}; //Where to move it
-int i = 0;
+//byte sent over serial
+byte byteRead;
 
-void moveMotor(int motoNumber, int pos){//pos is in degrees and will move TO the value given
+//RX | TX
+SoftwareSerial BTserial(13, 12);
+
+int pinArray[numberOfServos] = {2, 3, 4, 5, 6, 7, 8, 9}; //GPIO Pins used
+Servo servoArray[numberOfServos];//all servo motors in one array, initialized in setup
+
+//positions as limits [0] - [1] -> low - high
+int legBounds[][2] = {{30, 160}, {30, 160}, {30, 160}, {20, 170}};
+int kneeBounds[][2] = {{40, 80}, {RUP, RDOWN}, {40, 80}, {RUP, RDOWN}};
+
+//current position in degrees
+int currKneePos[4] = {50, 90, 50, 90};
+int currLegPos[4] = {90, 90, 90, 70};
+
+//pos - position of leg or knee
+//isLeg - 1 if leg is being moved, 0 for knee
+//Changes position of chosen leg or knee then moves the appropriate part
+/*
+ * Move a pair of legs or knees incrementally in a direction.
+ * @param pairID pair of legs or knees to move (0 or 1)
+ * @param isLeg 1 if leg is being moved, 0 for knee
+ * @param dir boolean direction to move leg or knee pair
+ * 
+ */
+void moveRobot(int pairID, int isLeg, int dir) {
+//  Serial.println("In moveRobot");
+  if(pairID < 0 || pairID > 3) {
+//    Serial.println("Error: moveRobot incorrect usage of pairID");
+  }
+  if(isLeg == 1) {
+     
+     moveLeg(pairID, dir);
+     if(dir == DIR_DOWN) {
+      moveLeg(pairID+2, DIR_UP);
+     }
+     else {
+      moveLeg(pairID+2, DIR_DOWN);
+     }
+     /*
+     Serial.print("Attempting to move leg ");
+     Serial.print(pairID);
+     Serial.print(" to position ");
+     Serial.println(currLegPos[pairID]);
+     Serial.print("Attempting to move leg ");
+     Serial.print(pairID+2);
+     Serial.print(" to position ");
+     Serial.println(currLegPos[pairID+2]);
+     */
+     
+  }
+  else if(isLeg == 0) {
+     
+     moveKnee(pairID, dir);
+     moveKnee(pairID+2, dir);
+     /*
+     Serial.print("Attempting to move knee ");
+     Serial.print(pairID);
+     Serial.print(" to position ");
+     Serial.println(currKneePos[pairID]);
+     Serial.print("Attempting to move knee ");
+     Serial.print(pairID+2);
+     Serial.print(" to position ");
+     Serial.println(currKneePos[pairID+2]);
+     */
+  }
+  else {
+    //Serial.println("Error: moveRobot incorrect usage of isLeg");
+  }
+}
+
+/* 
+ *  Write to a servo to move motor to exact position.
+ *  @param motoNumber number of motor being written to, corresponds to markings on robot
+ *  @param position to move the motor to in degrees
+ * 
+ */
+void moveMotor(int motoNumber, int pos){
   servoArray[motoNumber].write(pos); 
 }
 
-void moveKnee(int knee, int posIdx){
-   moveMotor(knee*2,kneePositions[posIdx]); 
+/* 
+ * Move a knee incrementally in a particular direction
+ * @param knee index of knee to move (0 - 3), motor = knee * 2 
+ * @param dir direction to move the knee
+ * 
+ */
+void moveKnee(int knee, int dir) {
+  
+   //Determine next knee position
+   if(dir == DIR_UP) {
+     currKneePos[knee] += 10;
+     if(currKneePos[knee] > kneeBounds[knee][1]) {
+      currKneePos[knee] = kneeBounds[knee][1];
+     }
+   }
+   else {
+     currKneePos[knee] -= 10;
+     if(currKneePos[knee] < kneeBounds[knee][0]) {
+      currKneePos[knee] = kneeBounds[knee][0];
+     }
+   }
+
+   //Move the knee to correct position
+   moveMotor(knee*2, currKneePos[knee]);
 }
 
-void moveLeg(int leg, int posIdx){
-   moveMotor(leg*2+1,legPositions[posIdx]); 
+/* 
+ * Move a leg incrementally in a particular direction
+ * @param leg index of leg to move (0 - 3), motor = (leg * 2) + 1 
+ * @param dir direction to move the knee
+ * 
+ */
+void moveLeg(int leg, int dir) {
+
+  //Determine next leg position
+  if(dir == DIR_UP) {
+     currLegPos[leg] += 10;
+     if(currLegPos[leg] > legBounds[leg][1]) {
+      currLegPos[leg] = legBounds[leg][1];
+     }
+   }
+   else {
+     currLegPos[leg] -= 10;
+     if(currLegPos[leg] < legBounds[leg][0]) {
+      currLegPos[leg] = legBounds[leg][0];
+     }
+   }
+
+  //move leg to correct position
+  moveMotor(leg*2+1,currLegPos[leg]);
 }
 
-void step(int legNumber){
-    //walk the leg and knee through the full range of motion
-    int j;
-    for(j=0;j<nPositions;j++){
-        moveLeg(legNumber,j);
-        moveKnee(legNumber,j); 
-        delay(200);
-    } 
-    moveLeg(legNumber,0);
-    moveKnee(legNumber,0);
-}
-
+/* 
+ * Initial setup of robot. Setup servo array and move robot to resting position.
+ */
 void setup() {
   
-  for(int x = 0; x < numberOfServos; x++){//Assign each servo to a pin, array[0] = pinarray[0]
+  // turn on serial protocol
+  //Serial.begin(9600);
+  
+  //Serial.println("Setup started");
+
+  //Assign each servo to a pin, array[0] = pinarray[0]
+  for(int x = 0; x < numberOfServos; x++){
     servoArray[x].attach(pinArray[x]);
   }
- 
+
+  //read current positions in from EEProm
+  for(int i = 0; i < 4; i++) {
+    currKneePos[i] = EEPROM.read(i);
+    currLegPos[i] = EEPROM.read(i+4);
+  }
+
+  setupRobot();
+
+  //setup wireless receiver
+  BTserial.begin(9600);
+
+  //delay(3000);
+  //Serial.println("Setup finished");
 }
 
-
-void loop() {  
-  //Test: Loop through all the positions on a specific motor
-  step(0);
+/* 
+ * Resets robot to default standing position. Moves each motor.
+ */
+void setupRobot() { 
+  for(int i=0; i<=3; i++){
+    moveMotor(i*2, currKneePos[i]);
+    moveMotor(i*2 + 1, currLegPos[i]);
+    delay(50);
+  }
 }
+
+void loop() {
+   readInput();
+}
+
+/* 
+ * Receive incoming commands and move appropriate motors.
+ */
+void readInput() {
+  //Serial.println("Serial event occured!");
+  //check for serial input
+  while(BTserial.available() > 0) {
+    
+    //read most recent byte
+    if(BTserial.available() > 0) {
+      byteRead = BTserial.read();
+    }
+    /*
+    else {
+      byteRead = Serial.read();
+    }
+    */
+    
+    //Serial.print("Byte received: ");
+    //Serial.println(byteRead);
+    
+
+    //TEMPORARY DEBUG
+    /*char keyRead = byteRead;
+
+    Serial.print("Key received: ");
+    Serial.println(keyRead);
+
+    //knee pair 1
+    if(keyRead == 'q') {
+      byteRead = 0x08;
+    }
+    if(keyRead == 'w') {
+      byteRead = 0x04;
+    }
+    //knee pair 2
+    if(keyRead == 'a') {
+      byteRead = 0x80;
+    }
+    if(keyRead == 's') {
+      byteRead = 0x40;
+    }
+    //leg pair 1
+    if(keyRead == 'o') {
+      byteRead = 0x01;
+    }
+    if(keyRead == 'p') {
+      byteRead = 0x02;
+    }
+    //leg pair 2
+    if(keyRead == 'k') {
+      byteRead = 0x10;
+    }
+    if(keyRead == 'l') {
+      byteRead = 0x20;
+    }*/
+
+    //TEMPORARY DEBUG END
+
+    //Serial.print("Byte received: ");
+    //Serial.println(byteRead);
+    
+    //pair - isLeg - dir
+    if(bitRead(byteRead, 0)){
+      moveRobot(0, 0, 1);
+    }
+    if(bitRead(byteRead, 1)) {
+      moveRobot(1, 0, 1);
+    }
+    if(bitRead(byteRead, 2)) {
+      moveRobot(0, 1, 1);
+    }
+    if(bitRead(byteRead, 3)) {
+      moveRobot(1, 1, 1);
+    }
+    if(bitRead(byteRead, 4)) {
+      moveRobot(0, 0, 0);
+    }
+    if(bitRead(byteRead, 5)) {
+      moveRobot(1, 0, 0);
+    }
+    if(bitRead(byteRead, 6)) {
+      moveRobot(0, 1, 0);
+    }
+    if(bitRead(byteRead, 7)) {
+      moveRobot(1, 1, 0);
+    }
+
+    //update EEPROM
+    for(int i = 0; i < 4; i++) {
+      EEPROM.write(i, currKneePos[i]);
+      EEPROM.write(i+4, currLegPos[i]);
+    }
+
+    delay(100);
+  }
+  delay(100);
+}
+
