@@ -256,30 +256,30 @@ void readInput() {
     //Serial.print("Byte received: ");
     //Serial.println(byteRead);
     
-    
+    //pair - isLeg - dir
     if(bitRead(byteRead, 0)){
-      moveRobot(0, 0, 0);
-    }
-    if(bitRead(byteRead, 1)) {
       moveRobot(0, 0, 1);
     }
-    if(bitRead(byteRead, 2)) {
-      moveRobot(0, 1, 0);
-    }
-    if(bitRead(byteRead, 3)) {
-      moveRobot(0, 1, 1);
-    }
-    if(bitRead(byteRead, 4)) {
-      moveRobot(1, 0, 0);
-    }
-    if(bitRead(byteRead, 5)) {
+    if(bitRead(byteRead, 1)) {
       moveRobot(1, 0, 1);
     }
+    if(bitRead(byteRead, 2)) {
+      moveRobot(0, 1, 1);
+    }
+    if(bitRead(byteRead, 3)) {
+      moveRobot(1, 1, 1);
+    }
+    if(bitRead(byteRead, 4)) {
+      moveRobot(0, 0, 0);
+    }
+    if(bitRead(byteRead, 5)) {
+      moveRobot(1, 0, 0);
+    }
     if(bitRead(byteRead, 6)) {
-      moveRobot(1, 1, 0);
+      moveRobot(0, 1, 0);
     }
     if(bitRead(byteRead, 7)) {
-      moveRobot(1, 1, 1);
+      moveRobot(1, 1, 0);
     }
 
     //update EEPROM
