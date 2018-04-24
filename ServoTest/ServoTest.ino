@@ -8,7 +8,7 @@
 #define DOWN 90
 #define RDOWN 180
 #define UP 10
-#define RUP 100
+#define RUP 130
 #define BACK 25
 #define RBACK 170
 #define FORWARD 170
@@ -28,11 +28,12 @@ int pinArray[numberOfServos] = {2, 3, 4, 5, 6, 7, 8, 9}; //GPIO Pins used
 Servo servoArray[numberOfServos];//all servo motors in one array, initialized in setup
 
 //positions as limits [0] - [1] -> low - high
-int legBounds[][2] = {{30, 160}, {30, 160}, {30, 160}, {20, 170}};
-int kneeBounds[][2] = {{40, 80}, {RUP, RDOWN}, {40, 80}, {RUP, RDOWN}};
+//Leg full range = 30, 160
+int legBounds[][2] = {{40, 150}, {40, 150}, {40, 150}, {40, 150}};
+int kneeBounds[][2] = {{60, 80}, {RUP, RDOWN}, {60, 80}, {RUP - 10, RDOWN - 10}};
 
 //current position in degrees
-int currKneePos[4] = {50, 90, 50, 90};
+int currKneePos[4] = {50, 90, 50, 80};
 int currLegPos[4] = {90, 90, 90, 70};
 
 //pos - position of leg or knee
@@ -169,10 +170,10 @@ void setup() {
   }
 
   //read current positions in from EEProm
-  for(int i = 0; i < 4; i++) {
+  /*for(int i = 0; i < 4; i++) {
     currKneePos[i] = EEPROM.read(i);
     currLegPos[i] = EEPROM.read(i+4);
-  }
+  }*/
 
   setupRobot();
 
@@ -262,10 +263,10 @@ void readInput() {
     
     //pair - isLeg - dir
     if(bitRead(byteRead, 0)){
-      moveRobot(0, 0, 1);
+      moveRobot(0, 0, 0);
     }
     if(bitRead(byteRead, 1)) {
-      moveRobot(1, 0, 1);
+      moveRobot(1, 0, 0);
     }
     if(bitRead(byteRead, 2)) {
       moveRobot(0, 1, 1);
@@ -274,10 +275,10 @@ void readInput() {
       moveRobot(1, 1, 1);
     }
     if(bitRead(byteRead, 4)) {
-      moveRobot(0, 0, 0);
+      moveRobot(0, 0, 1);
     }
     if(bitRead(byteRead, 5)) {
-      moveRobot(1, 0, 0);
+      moveRobot(1, 0, 1);
     }
     if(bitRead(byteRead, 6)) {
       moveRobot(0, 1, 0);
@@ -287,10 +288,10 @@ void readInput() {
     }
 
     //update EEPROM
-    for(int i = 0; i < 4; i++) {
+    /*for(int i = 0; i < 4; i++) {
       EEPROM.write(i, currKneePos[i]);
       EEPROM.write(i+4, currLegPos[i]);
-    }
+    }*/
 
     delay(100);
   }
