@@ -1,4 +1,4 @@
-Forward: 144 & 9
-Backward: 24 & 129
-Left: 96 & 6
-Right: 36 & 66 
+Forward:  2 -> 144 & 9
+Backward: 2 -> 24 & 129
+Left:     1 -> 96 & 6
+Right:    1 -> 36 & 66 

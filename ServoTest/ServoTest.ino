@@ -36,6 +36,19 @@ int kneeBounds[][2] = {{60, 80}, {RUP, RDOWN}, {60, 80}, {RUP - 10, RDOWN - 10}}
 int currKneePos[4] = {50, 90, 50, 80};
 int currLegPos[4] = {90, 90, 90, 70};
 
+int startKneePos[4] = {50, 90, 50, 80};
+int startLegPos[4] = {90, 90, 90, 70};
+int moveMode = 0;
+int moveCounter = 0;
+int motionModes[5][2] = {
+  {0,0},
+  {144,9},//up
+  {24,129},//down
+  {6, 96},//left
+  {36,66},//right
+};
+int motionStarts[5] = {0,(1<<1), (1<<1), (1<<4), (1<<4)};
+int isSetup = false;
 //pos - position of leg or knee
 //isLeg - 1 if leg is being moved, 0 for knee
 //Changes position of chosen leg or knee then moves the appropriate part
@@ -189,8 +202,8 @@ void setup() {
  */
 void setupRobot() { 
   for(int i=0; i<=3; i++){
-    moveMotor(i*2, currKneePos[i]);
-    moveMotor(i*2 + 1, currLegPos[i]);
+    moveMotor(i*2, startKneePos[i]);
+    moveMotor(i*2 + 1, startLegPos[i]);
     delay(50);
   }
 }
@@ -205,11 +218,18 @@ void loop() {
 void readInput() {
   //Serial.println("Serial event occured!");
   //check for serial input
-  while(BTserial.available() > 0) {
+  if(true/*BTserial.available() > 0*/) {
     
     //read most recent byte
     if(BTserial.available() > 0) {
-      byteRead = BTserial.read();
+      moveMode = BTserial.read();
+      moveCounter = 0;
+      if(moveMode == 0 && !isSetup){
+        isSetup = true; 
+        setupRobot();
+      }else if (moveMode != 0){
+        isSetup = false; 
+      }
     }
     /*
     else {
@@ -257,10 +277,13 @@ void readInput() {
     }*/
 
     //TEMPORARY DEBUG END
-
-    //Serial.print("Byte received: ");
-    //Serial.println(byteRead);
-    
+    moveCounter++;
+    if(moveCounter < 2 && moveMode > 0){
+        byteRead = motionStarts[moveMode];
+    }
+    else{
+        byteRead = motionModes[moveMode][(moveCounter/10)%2];
+    }
     //pair - isLeg - dir
     if(bitRead(byteRead, 0)){
       moveRobot(0, 0, 0);
