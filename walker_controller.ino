@@ -2,7 +2,7 @@ int button[] = {3,5,7,9,2,4,6,8};
 byte output = 0;
 int buttonState[] = {0,0,0,0,0,0,0,0};
 int val = 0;
-byte oldOutput = 420;
+byte oldOutput = 255;
 
 
 void setup() {
@@ -31,12 +31,15 @@ void loop() {
     }
   }
 
-  //if(output != 0){
-    if (output != oldOutput){
-      Serial.println(output);
-      oldOutput = output;
-    }
-    //delay(100);
-  //}
+  if (output != oldOutput){
+    Serial.write(output);
+    oldOutput = output;
+  }
 
+  //comment this block out to remove repeating zero
+  if (output == 0){
+    Serial.write(output);
+    delay(100);
+  }
+  
 }
