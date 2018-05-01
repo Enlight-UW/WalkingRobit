@@ -34,5 +34,4 @@ void loop() {
     Serial.write(output);
     delay(100);
   }
-
 }
